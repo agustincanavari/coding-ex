@@ -11,12 +11,12 @@ def get_company_report_rows(companies, opportunities):
 
         opportunity_amount = 0
         opportunity_sum = 0
-        last_updated_opportunity = None
+        last_updated_opportunity = "1900-12-15T05:11:12Z"
 
         for opportunity_id in opportunities.keys():
             if opportunities[opportunity_id]['company_id'] == company_id:
                 opportunity_amount += 1
-                opportunity_sum += opportunities[opportunity_id]['amount']
+                opportunity_sum += float(opportunities[opportunity_id]['amount'])
                 if opportunities[opportunity_id]['updated_at'] > last_updated_opportunity:
                     last_updated_opportunity = opportunities[opportunity_id]['updated_at']
 
@@ -24,40 +24,29 @@ def get_company_report_rows(companies, opportunities):
 
     return rows
 
+def process_csv_as_json(csv_url, file_name):
+    csv_file, _ = urllib.request.urlretrieve(csv_url, "")
+    
+    with open(csv_file, 'r') as csv_file_handler:
+        csv_reader = csv.DictReader(csv_file_handler)
+        with open(file_name, 'w') as json_file_handler:
+            for row in csv_reader:
+                json.dump(row, json_file_handler)
+                json_file_handler.write('\n')
+
 
 def main():
     # part 1
-    local_companies, _ = urllib.request.urlretrieve("https://pbryan.github.io/exercise/companies.csv", "")
-    local_opportunities, _ = urllib.request.urlretrieve("https://pbryan.github.io/exercise/opportunities.csv", "")
-
-    companies = open(local_companies, 'r')
-    opportunities = open(local_opportunities, 'r')
-
-    json_companies = open('companies_json', 'w')
-    json_opportunities = open('opportunities_json', 'w')
-
-    companies_reader = csv.DictReader(companies, ['id', 'name', 'start_date', 'logo_image_url', 'employees', 'target_account', '_row_'])
-    opportunities_reader = csv.DictReader(opportunities, ['id', 'company_id', 'amount', 'type', 'updated_at', 'status', '_row_'])
-
-    for row in companies_reader:
-        json.dump(row, json_companies)
-        json_companies.write('\n')
-
-    for row in opportunities_reader:
-        json.dump(row, json_opportunities)
-        json_opportunities.write('\n')
-
-    companies.close()
-    opportunities.close()
-    json_companies.close()
-    json_opportunities.close()
+    process_csv_as_json("https://pbryan.github.io/exercise/companies.csv", "companies_json")
+    process_csv_as_json("https://pbryan.github.io/exercise/opportunities.csv", "opportunities_json")
 
     # part 2
     companies = {}
     opportunities = {}
 
-    with open(json_companies) as companies_file:
-        for jsonObj in companies_file:
+    with open("companies_json") as companies_file:
+        for jsonStr in companies_file:
+            jsonObj = json.loads(jsonStr)
             companies[jsonObj['id']] = {
                 'name': jsonObj['name'],
                 'start_date': jsonObj['start_date'],
@@ -66,8 +55,9 @@ def main():
                 'target_account': jsonObj['target_account']
             }
 
-    with open(json_opportunities) as opportunities_file:
-        for jsonObj in opportunities_file:
+    with open("opportunities_json") as opportunities_file:
+        for jsonStr in opportunities_file:
+            jsonObj = json.loads(jsonStr)
             opportunities[jsonObj['id']] = {
                 'company_id': jsonObj['company_id'],
                 'amount': jsonObj['amount'],
@@ -81,11 +71,11 @@ def main():
 
     report_headers = ['company name', 'start date', 'opportunities', 'average opportunity amount', 'last update']
     report_rows = get_company_report_rows(companies, opportunities)
-    report = open('company_report.csv')
-    writer = csv.writer(report)
-    writer.writerow(report_headers)
-    for row in report_rows:
-        writer.writerow(row)
+    with open('company_report.csv', 'w') as report:
+        writer = csv.writer(report)
+        writer.writerow(report_headers)
+        for row in report_rows:
+            writer.writerow(row)
 
 
 if __name__ == "__main__":

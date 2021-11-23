@@ -1,5 +1,3 @@
-## Commit test 1
-
 ## Introduction
 
 While you could accomplish some of these tasks using libraries like Pandas or Requests, one of the objectives of this exercise is to evaluate your ability to implement with Python’s standard library. Therefore, it is preferred that you use the “batteries that are included” with Python.
